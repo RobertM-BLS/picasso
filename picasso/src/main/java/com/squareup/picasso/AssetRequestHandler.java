@@ -43,7 +43,7 @@ class AssetRequestHandler extends RequestHandler {
 
   @Override public Result load(Request request, int networkPolicy) throws IOException {
     InputStream is = assetManager.open(getFilePath(request));
-    return new Result(is, DISK);
+    return new Result(null, is, DISK, readExifOrientationData(is));
   }
 
   static String getFilePath(Request request) {

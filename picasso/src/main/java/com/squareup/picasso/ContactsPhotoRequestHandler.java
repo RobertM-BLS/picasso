@@ -69,7 +69,7 @@ class ContactsPhotoRequestHandler extends RequestHandler {
 
   @Override public Result load(Request request, int networkPolicy) throws IOException {
     InputStream is = getInputStream(request);
-    return is != null ? new Result(is, DISK) : null;
+    return is != null ? new Result(null, is, DISK, readExifOrientationData(is)) : null;
   }
 
   private InputStream getInputStream(Request data) throws IOException {

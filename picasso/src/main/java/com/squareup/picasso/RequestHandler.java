@@ -19,8 +19,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
 import android.net.NetworkInfo;
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
+import com.drew.metadata.Directory;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifIFD0Directory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 
 import static com.squareup.picasso.Utils.checkNotNull;
 
@@ -179,5 +186,53 @@ public abstract class RequestHandler {
     }
     options.inSampleSize = sampleSize;
     options.inJustDecodeBounds = false;
+  }
+
+  static int readExifOrientationData(InputStream input) {
+    if (input == null) {
+      return ExifInterface.ORIENTATION_UNDEFINED;
+    }
+
+    try {
+      Metadata metadata = ImageMetadataReader.readMetadata(input);
+      if (metadata == null) {
+        return ExifInterface.ORIENTATION_UNDEFINED;
+      }
+
+      Collection<ExifIFD0Directory> directories =
+              metadata.getDirectoriesOfType(ExifIFD0Directory.class);
+      if (directories == null) {
+        return ExifInterface.ORIENTATION_UNDEFINED;
+      }
+
+      for (Directory directory : directories) {
+        // according to:
+        // http://grepcode.com/file/repo1.maven.org/maven2/com.drewnoakes
+        // /metadata-extractor/2.8.1/com/drew/metadata/exif
+        // /ExifDescriptorBase.java#ExifDescriptorBase.getOrientationDescription%28%29
+        try {
+          int orientation = directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+          switch (orientation) {
+            case 6:
+              return ExifInterface.ORIENTATION_ROTATE_90;
+            case 3:
+              return ExifInterface.ORIENTATION_ROTATE_180;
+            case 8:
+              return ExifInterface.ORIENTATION_ROTATE_270;
+            default:
+              break;
+          }
+        } catch (MetadataException e) {
+        }
+      }
+    } catch (ImageProcessingException e) {
+    } catch (IOException e) {
+    } finally {
+      try {
+        input.close();
+      } catch (IOException e) {
+      }
+    }
+    return ExifInterface.ORIENTATION_UNDEFINED;
   }
 }

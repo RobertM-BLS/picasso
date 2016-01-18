@@ -36,7 +36,8 @@ class ContentStreamRequestHandler extends RequestHandler {
   }
 
   @Override public Result load(Request request, int networkPolicy) throws IOException {
-    return new Result(getInputStream(request), DISK);
+    return new Result(null, getInputStream(request), DISK,
+            readExifOrientationData(getInputStream(request)));
   }
 
   InputStream getInputStream(Request request) throws FileNotFoundException {
